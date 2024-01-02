@@ -1,11 +1,16 @@
 package lk.ijse.dep11;
 
 import lk.ijse.dep11.entity.Order;
+import lk.ijse.dep11.entity.OrderDetail;
 import lk.ijse.dep11.to.OrderDetailTO;
 import lk.ijse.dep11.to.OrderTO;
 import org.modelmapper.ModelMapper;
+import org.modelmapper.PropertyMap;
 
 import java.math.BigDecimal;
+import java.sql.Date;
+import java.sql.SQLData;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -23,10 +28,21 @@ public class Transformer2 {
         ModelMapper mapper = new ModelMapper();
         mapper.getConfiguration().setAmbiguityIgnored(true);
 
+        // Handle mismatches of data types
+        mapper.typeMap(LocalDate.class, Date.class)
+                        .setConverter(ctx -> Date.valueOf(ctx.getSource()));
+
+        // Handle mismatches of property names
         mapper.typeMap(OrderTO.class,  Order.class)
-                .addMapping(OrderTO::getOrderId, Order::setId);
+                .addMapping(OrderTO::getOrderId, Order::setId)
+                .addMapping(OrderTO::getOrderDate, Order::setDate);
+
+        mapper.typeMap(OrderDetailTO.class, OrderDetail.class)
+                .addMapping(OrderDetailTO::getCode, OrderDetail::setItemCode)
+                .addMapping(OrderDetailTO::getPrice, OrderDetail::setUnitPrice);
 
         Order order = mapper.map(orderTO, Order.class);
+        order.getOrderDetailList().forEach(od -> od.setOrderId(order.getId()));
 
         System.out.println(order);
         order.getOrderDetailList().forEach(System.out::println);
